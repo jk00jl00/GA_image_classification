@@ -1,0 +1,10 @@
+{
+  "layers": [
+    {"type": "Conv", "input_dim": [28, 28], "filters": 8, "size": 5, "stride": 1, "padding": 2},
+    {"type": "MaxPool", "input_dim": "prev", "depth": "prev", "size": 2, "stride": 2, "padding": 0},
+    {"type": "Conv", "input_dim": "prev", "filters": 16, "size": 5, "stride": 1, "padding": 2},
+    {"type": "MaxPool", "input_dim": "prev", "depth": "prev", "size": 2, "stride": 2, "padding": 0},
+    {"type": "FC", "input_dim": "prev", "output_dim": 10},
+    {"type": "SoftMax", "input_dim": "prev"}
+  ]
+}
