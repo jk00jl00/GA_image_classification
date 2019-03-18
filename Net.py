@@ -1,6 +1,13 @@
 import Layer
 import json
 import numpy as np
+import ConvLayer
+import SoftMaxLayer
+import MaxPoolLayer
+import FCLayer
+import ReluActivation
+
+
 class LayerManager:
 
     @staticmethod
@@ -8,17 +15,13 @@ class LayerManager:
         l = None
 
         if layer.get("type") == "Conv":
-            if len(layer.get("input_dim")) > 2:
-                l = Layer.ConvLayer(layer.get("input_dim"), layer.get("filters"), layer.get("size"), layer.get("stride"), layer.get("padding"))
-            else:
-                l = Layer.ConvLayer2d(layer.get("input_dim"), layer.get("filters"), layer.get("size"), layer.get("stride"), layer.get("padding"))
-
+                l = ConvLayer.ConvLayer(layer.get("input_dim"), layer.get("filters"), layer.get("size"), layer.get("stride"), layer.get("padding"))
         elif layer.get("type") == "MaxPool":
-            l = Layer.MaxPoolLayer(layer.get("input_dim"), layer.get("depth"), layer.get("size"), layer.get("stride"), layer.get("padding"))
+            l = MaxPoolLayer.MaxPoolLayer(layer.get("input_dim"), layer.get("depth"), layer.get("size"), layer.get("stride"), layer.get("padding"))
         elif layer.get("type") == "SoftMax":
-            l = Layer.SoftMaxLayer(layer.get("input_dim"))
+            l = SoftMaxLayer.SoftMaxLayer(layer.get("input_dim"))
         elif layer.get("type") == "FC":
-            l = Layer.FullyConnectedLayer(layer.get("input_dim"), layer.get("output_dim"))
+            l = FCLayer.FCLayer(layer.get("input_dim"), layer.get("output_dim"))
 
         return l
 
@@ -33,7 +36,9 @@ class Net:
         self.layers.append(LayerManager.get_layer(layer))
 
     def add_relu(self):
-        self.layers.append(Layer.ReLuLayer(self.layers[-1].output.shape))
+        self.layers.append(ReluActivation.ReLuLayer(
+            {'height': self.layers[-1].output.shape[0], 'width': self.layers[-1].output.shape[1],
+             'depth': self.layers[-1].output.shape[2]}))
 
     def remove_layer(self, layer):
             self.layers.remove(layer)
@@ -48,7 +53,7 @@ class Net:
         grads, loss = self.layers[-1].get_loss(true_class)
 
         for l in reversed(self.layers[:-1]):
-            grads = l.backward_pass(grads, rate)
+            grads = l.backward_pass(grads)
 
         self.grads = grads
         return loss, grads
@@ -66,7 +71,13 @@ class Net:
 
         for l in layers:
             if l["type"] == "Conv":
-                input_dim = l["input_dim"] if l["input_dim"] != "prev" else self.layers[-1].output.shape
+                input_dim = l["input_dim"] if l["input_dim"] != "prev" else \
+                    {"height":self.layers[-1].output.shape[0], "width": self.layers[-1].output.shape[1]}
+                if len(self.layers) > 0:
+                    if self.layers[-1].output.size > 2:
+                        input_dim['depth'] = self.layers[-1].output.shape[2]
+                    else:
+                        input_dim['depth'] = 1
                 filters = l["filters"]
                 size = l["size"]
                 stride = l["stride"]
@@ -75,7 +86,12 @@ class Net:
                                 "size": size, "stride": stride, "padding": padding})
                 self.add_relu()
             elif l["type"] == "MaxPool":
-                input_dim = l["input_dim"] if l["input_dim"] != "prev" else self.layers[-1].output.shape
+                input_dim = l["input_dim"] if l["input_dim"] != "prev" else \
+                    {"height":self.layers[-1].output.shape[0], "width": self.layers[-1].output.shape[1]}
+                if self.layers[-1].output.size > 2:
+                    input_dim['depth'] = self.layers[-1].output.shape[2]
+                else:
+                    input_dim['depth'] = 1
                 depth = l["depth"] if l["depth"] != "prev" else self.layers[-1].output.shape[-1]
                 size = l["size"]
                 stride = l["stride"]
@@ -83,8 +99,13 @@ class Net:
                 self.add_layer({"type": "MaxPool", "input_dim": input_dim, "depth": depth,
                                 "size": size, "stride": stride, "padding": padding})
             elif l["type"] == "FC":
-                input_dim = l["input_dim"] if l["input_dim"] != "prev" else self.layers[-1].output.shape
-                output_dim = l["output_dim"]
+                input_dim = l["input_dim"] if l["input_dim"] != "prev" else \
+                    {"height":self.layers[-1].output.shape[0], "width": self.layers[-1].output.shape[1]}
+                if self.layers[-1].output.size > 2:
+                    input_dim['depth'] = self.layers[-1].output.shape[2]
+                else:
+                    input_dim['depth'] = 1
+                output_dim = {'depth': l["output_dim"]}
                 self.add_layer({"type": "FC", "input_dim": input_dim, "output_dim": output_dim})
                 self.add_relu()
             elif l["type"] == "SoftMax":

@@ -9,12 +9,9 @@ class Trainer:
         self.net = net
         self.rate = 0.01
 
-    def train_mnist_digits(self, batches, info_every_n):
-        self.train_mnist_digits(0, batches, info_every_n, None, None)
-
-    def train_mnist_digits(self, from_batch, batches, info_every_n, save_activations_every, activation_path):
+    def train_mnist_digits(self, from_batch=0, batches=1, info_every_n=100, save_activations_every=None, activation_path=None):
         for i in range(batches - from_batch):
-            training_batch = cv.imread(f"mnist_batch_{from_batch + i}.png", 0)
+            training_batch = cv.imread(f"img/mnist_batch_{from_batch + i}.png", 0)
             correct = 0
             incorrect = 0
             loss_total = 0
@@ -28,7 +25,8 @@ class Trainer:
                 L2_loss = 0
 
                 for l in self.net.layers:
-                    L2_loss += l.getL2()
+                    # L2_loss += l.getL2()
+                    pass
 
                 loss_total += loss + L2_loss
 
@@ -58,12 +56,14 @@ class Trainer:
                 self.net.update(self.rate)
 
 
-n = Net.Net()
+if __name__ == '__main__':
+    n = Net.Net()
 
-n.init_from_json(None)
+    n.init_from_json(None)
 
-trainer = Trainer(n)
+    trainer = Trainer(n)
 
-trainer.train_mnist_digits(0, 1, 100, 100, "img/activation")
+    """100, 'img/activation'"""
+    trainer.train_mnist_digits(0, 1, 100)
 
-n.weights_to_json("weights_2_0.JSON")
+    n.weights_to_json("weights_2_0.JSON")
