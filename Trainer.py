@@ -52,8 +52,7 @@ class Trainer:
                     correct = 0
                     incorrect = 0
                     loss_total = 0
-
-                self.net.update(self.rate)
+            self.net.update(self.rate)
 
 
 if __name__ == '__main__':
@@ -64,6 +63,6 @@ if __name__ == '__main__':
     trainer = Trainer(n)
 
     """100, 'img/activation'"""
-    trainer.train_mnist_digits(0, 1, 100)
+    trainer.train_mnist_digits(0, 20, 500)
 
     n.weights_to_json("weights_2_0.JSON")

@@ -22,11 +22,11 @@ class ConvLayer(Layer.Layer):
         self.stride = stride
         self.padding = padding
         self.input = None
-        self.w_grads = None
-        self.b_grads = None
         self.output = np.zeros(output_dim)
         self.filters = np.zeros([depth, size, size, input_dim['depth']]) + 0.001
         self.bias = np.zeros([depth])
+        self.w_grads = np.zeros(self.filters.shape)
+        self.b_grads = np.zeros(self.bias.shape)
 
     def forward_pass(self, input):
         if len(input.shape) < 3:
@@ -48,8 +48,8 @@ class ConvLayer(Layer.Layer):
         return self.output
 
     def backward_pass(self, out_grads):
-        self.w_grads = np.zeros(self.filters.shape)
-        self.b_grads = np.zeros(self.bias.shape)
+        Layer.Layer.backward_pass(self, out_grads)
+
         x_grads = np.zeros(self.input.shape)
 
         for d in range(self.depth):
@@ -63,7 +63,7 @@ class ConvLayer(Layer.Layer):
                                     x_stride:x_stride + self.size] * out_grads[y, x, d]
                     x_stride += self.stride
                 y_stride += self.stride
-            self.b_grads = out_grads[0, 0, d]
+            self.b_grads[d] += out_grads[0, 0, d]
 
         return x_grads[self.padding:-self.padding, self.padding:-self.padding, :]
 
@@ -88,4 +88,8 @@ class ConvLayer(Layer.Layer):
         for w in range(self.filters.flatten().size):
             self.filters.flatten()[w] += self.l2_grads[w] * -1"""
         self.filters += -Layer.l2_delta * self.filters
-        self.filters += self.w_grads * -rate
+        self.filters += self.w_grads/self.activations * -rate
+
+        self.w_grads = np.zeros(self.filters.shape)
+        self.b_grads = np.zeros(self.bias.shape)
+        self.activations = 0

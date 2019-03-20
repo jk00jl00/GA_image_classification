@@ -6,12 +6,13 @@ class Layer:
         self.input_dim = input_dim
         self.output_dim = output_dim
         self.l2_grads = None
+        self.activations = 0
 
     def forward_pass(self, input):
         pass
 
     def backward_pass(self, out_grads):
-        pass
+        self.activations += 1
 
     def writeim(self, path):
         pass
